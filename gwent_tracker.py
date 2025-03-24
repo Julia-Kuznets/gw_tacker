@@ -82,6 +82,47 @@ def gw_stat():
         new_entry.to_csv('gwent_games.csv', mode='a', header=False, index=False)
         st.write("Запись сохранена")
 
+    @st.cache_data
+    def load_data():
+        return pd.read_csv('gwent_games.csv', header=None, names=['Результат', 'Дата', 'Ставка', 'Локация', 'Противник', 'Сумма'])
+
+    data = load_data()
+
+    #Преобразовываю данные
+    data['Дата'] = pd.to_datetime(data['Дата'])
+    data["Сумма"] = data.apply(lambda x: x["Ставка"] if x["Результат"] == "Выигрыш" else -x["Ставка"], axis=1)
+    data["Баланс"] = data["Ставка"].cumsum()  # Кумулятивная сумма
+
+
+    # Группируем по дате и считаем кумулятивный баланс
+    daily_balance = data.groupby("Дата")["Ставка"].sum().cumsum().reset_index()
+    daily_balance.columns = ["Дата", "Баланс"]
+
+    wins = len(data[data['Результат'] == 'Выигрыш'])
+    losses = len(data[data['Результат'] == 'Проигрыш'])
+    data = data.sort_values("Дата")
+
+    #Настройка данных для пирога
+    labels = ['Выигрыши', 'Проигрыши']
+    sizes = [wins, losses]
+    colors = ['#156A5F', '#9E331C']
+    explode = (0.1, 0)
+
+    #Создание диаграммы
+    fig, ax = plt.subplots()
+    ax.pie(sizes, explode=explode, labels=labels, colors=colors,
+           autopct='%1.1f%%', shadow=True, startangle=90)
+    ax.axis('equal')  # Чтобы диаграмма была круглой
+    st.title('Соотношение выигрышей и проигрышей')
+
+    st.pyplot(fig)
+
+    #Кривая по ставкам
+    st.title("Кривая по ставкам - Динамика баланса")
+    st.subheader("Линейный график")
+    st.line_chart(daily_balance.set_index("Дата")["Баланс"])
+
+    st.write("Данные по дням:", daily_balance)
 
 def fight_stat():
 
@@ -109,6 +150,46 @@ def fight_stat():
 
             new_entry.to_csv('fights.csv', mode='a', header=False, index=False)
             st.write("Запись сохранена")
+    @st.cache_data
+    def load_data():
+        return pd.read_csv('fights.csv', header=None, names=['Результат', 'Дата', 'Ставка', 'Локация', 'Противник', 'Сумма'])
+
+    data = load_data()
+
+    #Преобразовываю данные
+    data['Дата'] = pd.to_datetime(data['Дата'])
+    data["Сумма"] = data.apply(lambda x: x["Ставка"] if x["Результат"] == "Выигрыш" else -x["Ставка"], axis=1)
+    data["Баланс"] = data["Ставка"].cumsum()  # Кумулятивная сумма
+
+    # Группируем по дате и считаем кумулятивный баланс
+    daily_balance = data.groupby("Дата")["Ставка"].sum().cumsum().reset_index()
+    daily_balance.columns = ["Дата", "Баланс"]
+
+    wins = len(data[data['Результат'] == 'Выигрыш'])
+    losses = len(data[data['Результат'] == 'Проигрыш'])
+    data = data.sort_values("Дата")
+
+    #Настройка данных для пирога
+    labels = ['Выигрыши', 'Проигрыши']
+    sizes = [wins, losses]
+    colors = ['#156A5F', '#9E331C']
+    explode = (0.1, 0)
+
+    #Создание диаграммы
+    fig, ax = plt.subplots()
+    ax.pie(sizes, explode=explode, labels=labels, colors=colors,
+           autopct='%1.1f%%', shadow=True, startangle=90)
+    ax.axis('equal')  # Чтобы диаграмма была круглой
+    st.title('Соотношение выигрышей и проигрышей')
+
+    st.pyplot(fig)
+
+    #Кривая по ставкам
+    st.title("Кривая по ставкам - Динамика баланса")
+    st.subheader("Линейный график")
+    st.line_chart(daily_balance.set_index("Дата")["Баланс"])
+
+    st.write("Данные по дням:", daily_balance)
 
 
 if 'page' not in st.session_state:
